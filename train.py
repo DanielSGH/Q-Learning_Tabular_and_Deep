@@ -2,9 +2,14 @@
 train.py — Training loop for CartPole DQN experiments.
 Uses vectorized environments for speed (as suggested by the assignment).
 
-Supports all 4 configurations via CLI flags:
-  --use_target_network    enables Target Network      (task 2.3)
-  --use_replay_buffer     enables Experience Replay   (task 2.3)
+Supports all 4 configurations via --mode flag:
+  --mode naive    vanilla DQN, no Target Network, no Experience Replay  (task 2.3)
+  --mode tn       Target Network only                                    (task 2.3)
+  --mode er       Experience Replay only                                 (task 2.3)
+  --mode tn_er    Target Network + Experience Replay (full DQN)          (task 2.3)
+
+The legacy flags --use_target_network / --use_replay_buffer still work and
+take precedence over --mode if supplied explicitly.
 """
 
 import argparse
@@ -14,6 +19,14 @@ import torch
 import gymnasium as gym
 
 from agent import DQNAgent
+
+
+_MODE_CONFIGS = {
+    "naive": dict(use_target_network=False, use_replay_buffer=False),
+    "tn":    dict(use_target_network=True,  use_replay_buffer=False),
+    "er":    dict(use_target_network=False, use_replay_buffer=True),
+    "tn_er": dict(use_target_network=True,  use_replay_buffer=True),
+}
 
 
 def _try_import_replay_buffer():
@@ -172,6 +185,9 @@ def _update_from_batch(agent, batch, target_net, gamma):
 
 def parse_args():
     p = argparse.ArgumentParser()
+    p.add_argument("--mode", type=str, default=None, choices=list(_MODE_CONFIGS),
+                   help="Shorthand config: naive | tn | er | tn_er. "
+                        "Overridden by --use_target_network / --use_replay_buffer if given explicitly.")
     p.add_argument("--steps",               type=int,   default=1_000_000)
     p.add_argument("--seed",                type=int,   default=0)
     p.add_argument("--lr",                  type=float, default=1e-3)
@@ -181,13 +197,13 @@ def parse_args():
     p.add_argument("--epsilon_end",         type=float, default=0.05)
     p.add_argument("--epsilon_decay",       type=int,   default=100_000)
     p.add_argument("--num_envs",            type=int,   default=8)
-    p.add_argument("--use_target_network",  action="store_true")
-    p.add_argument("--use_replay_buffer",   action="store_true")
+    p.add_argument("--use_target_network",  action="store_true", default=None)
+    p.add_argument("--use_replay_buffer",   action="store_true", default=None)
     p.add_argument("--target_update_freq",  type=int,   default=1000)
     p.add_argument("--buffer_size",         type=int,   default=50_000)
     p.add_argument("--batch_size",          type=int,   default=64)
     p.add_argument("--min_buffer_size",     type=int,   default=1000)
-    p.add_argument("--run_name",            type=str,   default="naive")
+    p.add_argument("--run_name",            type=str,   default=None)
     p.add_argument("--results_dir",         type=str,   default="results")
     p.add_argument("--log_interval",        type=int,   default=1000)
     return p.parse_args()
@@ -195,15 +211,36 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+
+    # Resolve use_target_network / use_replay_buffer from --mode, then let
+    # explicit flags override if the user passed them directly.
+    use_tn = False
+    use_er = False
+    if args.mode is not None:
+        use_tn = _MODE_CONFIGS[args.mode]["use_target_network"]
+        use_er = _MODE_CONFIGS[args.mode]["use_replay_buffer"]
+    if args.use_target_network:
+        use_tn = True
+    if args.use_replay_buffer:
+        use_er = True
+
+    # Auto-derive run_name from mode when not set explicitly.
+    if args.run_name is not None:
+        run_name = args.run_name
+    elif args.mode is not None:
+        run_name = args.mode
+    else:
+        run_name = "naive"
+
     train(
         total_steps=args.steps, seed=args.seed,
         hidden_sizes=tuple(args.hidden_sizes), lr=args.lr, gamma=0.99,
         epsilon_start=args.epsilon_start, epsilon_end=args.epsilon_end,
         epsilon_decay_steps=args.epsilon_decay, update_every=args.update_every,
-        use_target_network=args.use_target_network,
-        use_replay_buffer=args.use_replay_buffer,
+        use_target_network=use_tn,
+        use_replay_buffer=use_er,
         target_update_freq=args.target_update_freq,
         buffer_size=args.buffer_size, batch_size=args.batch_size,
         min_buffer_size=args.min_buffer_size, log_interval=args.log_interval,
-        run_name=args.run_name, results_dir=args.results_dir, num_envs=args.num_envs,
+        run_name=run_name, results_dir=args.results_dir, num_envs=args.num_envs,
     )
