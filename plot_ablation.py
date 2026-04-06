@@ -1,13 +1,3 @@
-"""
-plot_ablation.py — Task 2.2: Plot ablation study results.
-
-Reads:  results_ablation/abl_<param>_<value>/seed_<N>.npz
-Writes: results_ablation/ablation_<param>.png  (one figure per hyperparameter)
-
-Usage:
-    python plot_ablation.py
-"""
-
 import os
 import numpy as np
 import matplotlib

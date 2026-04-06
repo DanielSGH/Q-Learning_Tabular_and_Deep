@@ -1,11 +1,7 @@
-
-
 from typing import List, Tuple
 import numpy as np
 
-
 Transition = Tuple[np.ndarray, int, float, np.ndarray, bool]
-
 
 class ReplayBuffer:
     def __init__(self, capacity: int):
