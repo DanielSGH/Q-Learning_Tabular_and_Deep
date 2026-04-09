@@ -1,9 +1,7 @@
-# Q-Learning_Tabular_and_Deep
-[//]: # (TODO: Maybe add more explanation about the assignment?)
+#!/bin/bash
 
-To execute the code, make sure taht script.sh is inside the repository. If it is not, pase the code below inside of a terminal.
+rm -rf ./results
 
-```sh
 for seed in 0 1 2 3 4; do
   python train.py \
     --run_name naive \
@@ -55,22 +53,3 @@ for seed in 0 1 2 3 4; do
     --warmup_steps 10000 \
     --total_steps 1000000
 done
-```
-
-To then generate the DQN variation results, simply run the command below:
-
-```sh
-python plot.py
-```
-
-In order to do the ablation study, simply run the command:
-```sh
-python ablation.py --seeds 5 --steps 1000000
-```
-
-Then, to plot the ablation graphs, simply run:
-```sh
-python plot_ablation.py
-```
-
-These commands should generate results and images inside of the results folder in the same working directory that the files are executed. 

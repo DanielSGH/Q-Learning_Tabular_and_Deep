@@ -2,4 +2,6 @@ ignore/
 .venv/
 __pycache__/
 *.png
-results/naive/*
+results*
+*.old*
+*.zip
